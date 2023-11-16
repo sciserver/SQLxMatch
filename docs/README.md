@@ -26,7 +26,7 @@ This can be faster and more efficient than having users to download the full cat
 
     For SQL Server, we execute a SQL script in order to install the SQLxMatch stored procedure. This script can be found under this path:
     
-    [/sql/sqlserver/cross-match/Install_SQLxMatch.sql](https://github.com/sciserver/sqlxmatch/sql/sqlserver/cross-match/Install_SQLxMatch.sql)
+    [/sql/sqlserver/cross-match/Install_SQLxMatch.sql](https://github.com/sciserver/sqlxmatch/tree/main/sql/sqlserver/cross-match/Install_SQLxMatch.sql)
            
 
     We installed this procedure in the `xmatchdb` database, which is accesible as the `xmatch` database context in CasJobs, to which users can connect and then run cross-macth queries.
@@ -50,12 +50,14 @@ This can be faster and more efficient than having users to download the full cat
             <CatalogName>_<TableName>
 
 
-        For creating those views, we run the script [/sql/sqlserver/catalog/CreateCatalogTableViews.sql](https://github.com/sciserver/sqlxmatch/sql/sqlserver/catalog/CreateCatalogTableViews.sql)
+        For creating those views, we run the script 
+        
+        [/sql/sqlserver/catalog/CreateCatalogTableViews.sql](https://github.com/sciserver/sqlxmatch/tree/main/sql/sqlserver/catalog/CreateCatalogTableViews.sql)
 
     - **Schema Metadata**
 
         We store the descriptions of tables, views and columns related to all the catalogs in tables under the [TAP SCHEMA](https://ivoa.net/documents/TAP/20190927/REC-TAP-1.1.html) in the `xmatchdb` database.
-        In order to make the metadata more accessible, we create views to those TAP tables, so that they can be directly queries by the users. The SQL scripts for creating that are located under [/sql/sqlserver/metadata/](https://github.com/sciserver/sqlxmatch/sql/sqlserver/metadata/), and should be executed in the specified ordered steps.
+        In order to make the metadata more accessible, we create views to those TAP tables, so that they can be directly queries by the users. The SQL scripts for creating that are located under [/sql/sqlserver/metadata/](https://github.com/sciserver/sqlxmatch/tree/main/sql/sqlserver/metadata/), and should be executed in the specified ordered steps.
 
 
 **Usage**
@@ -63,7 +65,7 @@ This can be faster and more efficient than having users to download the full cat
 
 - **SQLxMatch stored procedure**
 
-    Although several more complex use cases can be found in demo Jupyter Notebooks under the [demo](https://github.com/sciserver/sqlxmatch/demo) folder, all follow the pattern of a basic two-table cross-match:
+    Although several more complex use cases can be found in demo Jupyter Notebooks under the [demo](https://github.com/sciserver/sqlxmatch/tree/main/demo) folder, all follow the pattern of a basic two-table cross-match:
 
         EXECUTE SQLxMatch @table1='CatalogTable1', @table2='CatalogTable2', @radius=5
 
