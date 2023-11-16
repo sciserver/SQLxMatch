@@ -21,14 +21,14 @@ This can be faster and more efficient than having users to download the full cat
 ## **Documentation**
 
 
-Instructions on how to install and operate `SQLxMatch` can found under the [docs](https://github.com/sciserver/sqlxmatch/docs) folder.
+Instructions on how to install and operate `SQLxMatch` can found under the [docs](https://github.com/sciserver/sqlxmatch/tree/main/docs) folder.
 
 
 ## **Examples**
 
-Example Jupyter Notebooks and demos can be found under [demo](https://github.com/sciserver/sqlxmatch/demo) folder.
+Example Jupyter Notebooks and demos can be found under [demo](https://github.com/sciserver/sqlxmatch/tree/main/demo) folder.
 
 
 ## **License**
 
-All code and contents of this repository are licensed under the Apache 2.0 license. For more details see the [LICENSE.txt](https://github.com/sciserver/sqlxmatch/LICENSE.txt) file.
+All code and contents of this repository are licensed under the Apache 2.0 license. For more details see the [LICENSE.txt](https://github.com/sciserver/sqlxmatch/tree/main/LICENSE.txt) file.
