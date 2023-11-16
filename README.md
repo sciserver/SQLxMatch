@@ -1,14 +1,34 @@
-# dbXmatch
-In-database cross-match of astronomical objects.
+# [**SQLxMatch: In-Database Spatial Cross-Match of Astronomical Catalogs**](https://github.com/sciserver/SQLxMatch)
+
+##### Manuchehr Taghizadeh-Popp <sup>1*</sup> and Laszlo Dobos<sup>1,2</sup>
+<sup>1</sup> Department of Physics and Astronomy, Johns Hopkins University, Baltimore, MD, USA.<br>
+<sup>2</sup> Department of Physics of Complex Systems, Eötvös Loránd University, Budapest, Hungary.<br>
+<sup>*</sup> Leading contributor email: mtaghiza [at] jhu.edu  |  Help Desk: sciserver-helpdesk [at] jhu.edu
+<br><br>
+
+`SQLxMatch` (or *sequel cross match*)  is a SQL stored procedure that allows to perform 2-dimensional spatial cross-matches and cone searches across multiple astronomical catalogs stored in relational databases.
+This procedure implements the `Zones Algorithm` ([[1]](https://arxiv.org/abs/cs/0701171), [[2]](https://arxiv.org/abs/cs/0408031)), which leverages relational database algebra and B-Trees to cross-match the database tables or views containing the catalogs. To run a cross-match, these tables must simply contain at least the Right Ascension (RA) or Longitude, Declination (Dec) or Latitude, and unique object identifier (ID) columns.
+
+We have integrated `SQLxMatch` with more than 50 astronomical catalogs, and made those publicly available as tables in remote SQL Server databases `in the cloud` through the [CasJobs](https://skyserver.sdss.org/CasJobs) website, as part of the [SciServer](https://www.sciserver.org) science platform ([[3]](https://www.sciencedirect.com/science/article/abs/pii/S2213133720300664)). <br>
+To improve the execution speed, we install the cross-match code in a SQL Server database supported by fast NVMe storage with a RAID 6 configuration. We also place the catalog tables in several databases in the same physical server, thus avoiding having to move data across servers with a potentially slower network conection.
 
 
-<h3> Cross-matching objects in astronomical databases.</h3>
-
-[SciServer](https://apps.sciserver.org) offers the capability of cross-matching objects across multiple astronomical catalogs. These catalogs are available as tables in remote databases `in the cloud` through the [CasJobs](https://skyserver.sdss.org/CasJobs) web interface.
-
-The cross-match is run by executing a simple SQL stored procedure called `sp_xmatch`. This procedure implements the Zones Algorithm ([[1]](https://arxiv.org/abs/cs/0701171), [[2]](https://arxiv.org/abs/cs/0408031), which involves relational database algebra and B-Trees to run a 2-dimensional spatial cross-match between 2 catalogs of objects stored as database tables. These input tables must contain at least RA, Dec and ID columns.
-
-The advantage of this <i>`in-database`</i> remote cross-match, compared to other <i>`in-memory`</i> local cross-match software libraries, is that it uses the remote database server's own computing/storage resources to filter and cross-match the full catalogs right away, having only a relatively small-sized cross-match output table returned to the user.
-This can be faster and more efficient than having users to download the catalogs into their own computers (if they have big enough storage), and then load them in python for filtering and running the cross-match, for example.
+The advantage of this <i>`in-database`</i> remote cross-match, compared to other <i>`in-memory`</i> local cross-match software libraries, is that the users leverage the remote database server's own (and potentially bigger) computing/memory/storage resources to filter and cross-match the full catalogs right away, having only a relatively small-sized cross-match output table returned to them.
+This can be faster and more efficient than having users to download the full catalogs into their own computers (if they have enough storage), and then load them in python for filtering and running the cross-match, for instance.
 
 
+
+## **Documentation**
+
+
+Instructions on how to install and operate `SQLxMatch` can found under the [docs](https://github.com/sciserver/sqlxmatch/docs) folder.
+
+
+## **Examples**
+
+Example Jupyter Notebooks and demos can be found under [demo](https://github.com/sciserver/sqlxmatch/demo) folder.
+
+
+## **License**
+
+All code and contents of this repository are licensed under the Apache 2.0 license. For more details see the [LICENSE.txt](https://github.com/sciserver/sqlxmatch/LICENSE.txt) file.
