@@ -9,9 +9,8 @@
 `SQLxMatch` (or *sequel cross match*)  is a SQL stored procedure that allows to perform 2-dimensional spatial cross-matches and cone searches across multiple astronomical catalogs stored in relational databases.
 This procedure implements the `Zones Algorithm` ([[1]](https://arxiv.org/abs/cs/0701171), [[2]](https://arxiv.org/abs/cs/0408031)), which leverages relational database algebra and B-Trees to cross-match the database tables or views containing the catalogs. To run a cross-match, these tables must simply contain at least the Right Ascension (RA) or Longitude, Declination (Dec) or Latitude, and unique object identifier (ID) columns.
 
-We have integrated `SQLxMatch` with more than 50 astronomical catalogs, and made those publicly available as tables in remote SQL Server databases `in the cloud` through the [CasJobs](https://skyserver.sdss.org/CasJobs) website, as part of the [SciServer](https://www.sciserver.org) science platform ([[3]](https://www.sciencedirect.com/science/article/abs/pii/S2213133720300664)). <br>
-To improve the execution speed, we install the cross-match code in a SQL Server database supported by fast NVMe storage with a RAID 6 configuration. We also place the catalog tables in several databases in the same physical server, thus avoiding having to move data across servers with a potentially slower network conection.
-
+We have integrated `SQLxMatch` with more than 50 astronomical catalogs, and made those publicly available as tables in remote SQL Server databases `in the cloud` through the [CasJobs](https://skyserver.sdss.org/CasJobs) website, as part of the [SciServer](https://www.sciserver.org) science platform ([[3]](https://www.sciencedirect.com/science/article/abs/pii/S2213133720300664)). In CasJobs, users can directly execute form-free SQL queries for cross-matching, either synchronously or as asynchronous jobs. For general audiences, a simpler form-based [interactive web interface](http://skyserver.sdss.org/public/CrossMatchTools/crossmatch) that uses the CasJobs REST API for running cross-match queries will be soon available in the [SkyServer](http://skyserver.sdss.org) astronomy portal.<br>
+To improve cross-match query execution speed, we install `SQLxMatch` in a SQL Server database supported by fast NVMe storage in a RAID 6 configuration. We also place the catalog tables across several databases in the same physical server, thus avoiding having to move data across servers with a potentially slower network connection.
 
 The advantage of this <i>`in-database`</i> remote cross-match, compared to other <i>`in-memory`</i> local cross-match software libraries, is that the users leverage the remote database server's own (and potentially bigger) computing/memory/storage resources to filter and cross-match the full catalogs right away, having only a relatively small-sized cross-match output table returned to them.
 This can be faster and more efficient than having users to download the full catalogs into their own computers (if they have enough storage), and then load them in python for filtering and running the cross-match, for instance.
@@ -29,7 +28,7 @@ This can be faster and more efficient than having users to download the full cat
     [/sql/sqlserver/cross-match/Install_SQLxMatch.sql](https://github.com/sciserver/sqlxmatch/tree/main/sql/sqlserver/cross-match/Install_SQLxMatch.sql)
            
 
-    We installed this procedure in the `xmatchdb` database, which is accesible as the `xmatch` database context in CasJobs, to which users can connect and then run cross-macth queries.
+    We installed this procedure in the `xmatchdb` database, which is accessible as the `xmatch` database context in CasJobs, to which users can connect and then run cross-match queries.
 
     This script also installs several other procedures and functions, but those are intended to be used internally by the cross-match code only.
 
@@ -80,37 +79,35 @@ This can be faster and more efficient than having users to download the full cat
     The output table contains all objects found within the input search radius, although it will return only the closest match if the `@only_nearest` input parameter is set to 1 (see below). The first two columns in the returned table include the IDs of the objects in the first and seconds input tables, respectively, and the third column is the separation distance in arcseconds.
 
     The code will run faster if the 3-D cartesian coordinates of an object located on the surface of a unit-radius sphere (named as `cx`, `cy`, and `cz`) are already present as columns under those names in the input tables. The reason is that the cross-match code works internally with those coordinates (rather than with `RA`, `Dec`), and then it will not have to calculate them on the fly in that case. <br>
-    Similarly, the presence of the precomputed `zoneid` column in the catalog tables (based on a zone height of 4 arsec) will speed up the code, although it can be calculated on the fly if missing. 
-
-
+    Similarly, the presence of the precomputed `zoneid` column in the catalog tables (based on a zone height of 4 arcseconds) will speed up the code, although it can be calculated on the fly if missing. 
 
 
     <b>INPUT PARAMETERS:</b> <br>
     <ul>
-    <li> <b>@table1 sysname</b>: name of first input catalog. Can be any of these formats: 'server.database.schema.table', 'database.schema.table', 'database.table', or simply 'table'
-    <li> <b>@table2 sysname</b>: name of first input catalog. Can be any of these formats: 'server.database.schema.table', 'database.schema.table', 'database.table', or simply 'table'
-    <li> <b>@radius float</b>: search radius around each object, in arcseconds. Takes a default value of 10 arcseconds.
-    <li> <b>@id_col1 sysname</b>: name of the column defining a unique object identifier in catalog @table1. Takes a default value of 'objid'.
-    <li> <b>@id_col2 sysname</b>: name of the column defining a unique object identifier in catalog @table2. Takes a default value of 'objid'.
-    <li> <b>@ra_col1 sysname</b>: name of the column containing the Right Ascension (RA) in degrees of objects in catalog @table1. Takes a default value of 'ra'.
-    <li> <b>@ra_col2 sysname</b>: name of the column containing the Right Ascension (RA) in degrees of objects in catalog @table2. Takes a default value of 'ra'.
-    <li> <b>@dec_col1 sysname</b>: name of the column containing the Declination (Dec) in degrees of objects in catalog @table1. Takes a default value of 'dec'.
-    <li> <b>@dec_col2 sysname</b>: name of the column containing the Declination (Dec) in degrees of objects in catalog @table2. Takes a default value of 'dec'.
-    <li> <b>@max_catalog_rows1 bigint</b>: default value of null. If set, the procedure will use only the TOP @max_catalog_rows1 rows in catalog @table1, with no special ordering.
-    <li> <b>@max_catalog_rows2 bigint</b>: default value of null. If set, the procedure will use only the TOP @max_catalog_rows2 rows in catalog @table2, with no special ordering.
-    <li> <b>@output_table sysname</b>: If not null, this procedure will insert the output results into the table @output_table (of format 'server.database.schema.table', 'database.schema.table', 'database.table', or simply 'table'), which must already exist and be visbile within the scope of the procedure. If set to null, the output results will be simply returned as a table resultset. Takes a default value of null.
-    <li> <b>@only_nearest bit</b>: If set to 0 (default value), then all matches within a distance @radius to an object are returned. If set to 1, only the closest match to an object is returned.
-    <li> <b>@sort_by_separation bit</b>: If set to 1, then the output will be sorted by the 'id1' and 'sep' columns. If set to 0 (default value), no particular ordering is applied.
-    <li> <b>@radec_in_output bit </b>: If set to 1, then the output table will contain as well the (RA, Dec) values of each object.
-    <li> <b>@print_messages bit </b>: If set to 1, then time-stamped messages will be printed as the different sections in this procedure are completed.
+    <li> <b>@table1 NVARCHAR(128) or SYSNAME</b>: name of first input catalog. Can be any of these formats: 'server.database.schema.table', 'database.schema.table', 'database.table', or simply 'table'
+    <li> <b>@table2 NVARCHAR(128) or SYSNAME</b>: name of first input catalog. Can be any of these formats: 'server.database.schema.table', 'database.schema.table', 'database.table', or simply 'table'
+    <li> <b>@radius FLOAT</b>: search radius around each object, in arcseconds. Takes a default value of 10 arcseconds.
+    <li> <b>@id_col1 NVARCHAR(128) or SYSNAME</b>: name of the column defining a unique object identifier in catalog @table1. Takes a default value of 'objid'.
+    <li> <b>@id_col2 NVARCHAR(128) or SYSNAME</b>: name of the column defining a unique object identifier in catalog @table2. Takes a default value of 'objid'.
+    <li> <b>@ra_col1 NVARCHAR(128) or SYSNAME</b>: name of the column containing the Right Ascension (RA) in degrees of objects in catalog @table1. Takes a default value of 'ra'.
+    <li> <b>@ra_col2 NVARCHAR(128) or SYSNAME</b>: name of the column containing the Right Ascension (RA) in degrees of objects in catalog @table2. Takes a default value of 'ra'.
+    <li> <b>@dec_col1 NVARCHAR(128) or SYSNAME</b>: name of the column containing the Declination (Dec) in degrees of objects in catalog @table1. Takes a default value of 'dec'.
+    <li> <b>@dec_col2 NVARCHAR(128) or SYSNAME</b>: name of the column containing the Declination (Dec) in degrees of objects in catalog @table2. Takes a default value of 'dec'.
+    <li> <b>@max_catalog_rows1 BIGINT</b>: default value of NULL. If set, the procedure will use only the TOP @max_catalog_rows1 rows in catalog @table1, with no special ordering.
+    <li> <b>@max_catalog_rows2 BIGINT</b>: default value of NULL. If set, the procedure will use only the TOP @max_catalog_rows2 rows in catalog @table2, with no special ordering.
+    <li> <b>@output_table NVARCHAR(128) or SYSNAME</b>: If NOT NULL, this procedure will insert the output results into the table @output_table (of format 'server.database.schema.table', 'database.schema.table', 'database.table', or simply 'table'), which must already exist and be visible within the scope of the procedure. If set to null, the output results will be simply returned as a table resultset. Takes a default value of NULL.
+    <li> <b>@only_nearest BIT</b>: If set to 0 (default value), then all matches within a distance @radius to an object are returned. If set to 1, only the closest match to an object is returned.
+    <li> <b>@sort_by_separation BIT</b>: If set to 1, then the output will be sorted by the 'id1' and 'sep' columns. If set to 0 (default value), no particular ordering is applied.
+    <li> <b>@radec_in_output BIT </b>: If set to 1, then the output table will contain as well the (RA, Dec) values of each object.
+    <li> <b>@print_messages BIT </b>: If set to 1, then time-stamped messages will be printed as the different sections in this procedure are completed.
     </ul>
-        
+
     <b>RETURNS:</b> <br>
     <ul>
-        <li><b>TABLE (id1, id2, sep)</b>, where id1 and id2 are the unique object identifier columns in @table1 and @table2, respectively, and sep (float) is the angular separation between objetcs in arseconds. 
+        <li><b>TABLE (id1, id2, sep)</b>, where id1 and id2 are the unique object identifier columns in @table1 and @table2, respectively, and sep (FLOAT) is the angular separation between objects in arseconds. 
             
     or
-    <li><b>TABLE (id1, id2, sep, ra1, dec1, ra2, dec2)</b> when @radec_in_output=1, where ra1, dec1, ra2 and dec2 (all float) are the coordinates of the objets in @table1 and @table2, respectively.
+    <li><b>TABLE (id1, id2, sep, ra1, dec1, ra2, dec2)</b> when @radec_in_output=1, where ra1, dec1, ra2 and dec2 (all FLOAT) are the coordinates of the objects in @table1 and @table2, respectively.
     </ul>    
 
 
