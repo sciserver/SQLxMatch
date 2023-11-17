@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10142770.svg)](https://doi.org/10.5281/zenodo.10142770)
+
 # [**SQLxMatch: In-Database Spatial Cross-Match of Astronomical Catalogs**](https://github.com/sciserver/SQLxMatch)
 
 ##### Manuchehr Taghizadeh-Popp <sup>1*</sup> and Laszlo Dobos<sup>1,2</sup>
@@ -15,6 +17,12 @@ To improve cross-match query execution speed, we install `SQLxMatch` in a SQL Se
 The advantage of this <i>`in-database`</i> remote cross-match, compared to other <i>`in-memory`</i> local cross-match software libraries, is that the users leverage the remote database server's own (and potentially bigger) computing/memory/storage resources to filter and cross-match the full catalogs right away, having only a relatively small-sized cross-match output table returned to them.
 This can be faster and more efficient than having users to download the full catalogs into their own computers (if they have enough storage), and then load them in python for filtering and running the cross-match, for instance.
 
+**Citation**
+------------
+
+Taghizadeh-Popp, M. and Dobos, L. (2023) “SQLxMatch: In-Database Spatial Cross-Match of Astronomical Catalogs”. Zenodo. doi: 10.5281/zenodo.10142771.
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10142770.svg)](https://doi.org/10.5281/zenodo.10142770)
 
 
 **Installation**

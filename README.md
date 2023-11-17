@@ -1,3 +1,6 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10142770.svg)](https://doi.org/10.5281/zenodo.10142770)
+
+
 # [**SQLxMatch: In-Database Spatial Cross-Match of Astronomical Catalogs**](https://github.com/sciserver/SQLxMatch)
 
 ##### Manuchehr Taghizadeh-Popp <sup>1*</sup> and Laszlo Dobos<sup>1,2</sup>
@@ -28,6 +31,18 @@ Instructions on how to install and operate `SQLxMatch` can found under the [docs
 Example Jupyter Notebooks and demos can be found under [demo](https://github.com/sciserver/sqlxmatch/tree/main/demo) folder.
 
 
+## **Citation**
+
+Taghizadeh-Popp, M. and Dobos, L. (2023) “SQLxMatch: In-Database Spatial Cross-Match of Astronomical Catalogs”. Zenodo. doi: 10.5281/zenodo.10142771.
+
+
+
+
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10142770.svg)](https://doi.org/10.5281/zenodo.10142770)
+
 ## **License**
 
 All code and contents of this repository are licensed under the Apache 2.0 license. For more details see the [LICENSE.txt](https://github.com/sciserver/sqlxmatch/tree/main/LICENSE.txt) file.
+
+
