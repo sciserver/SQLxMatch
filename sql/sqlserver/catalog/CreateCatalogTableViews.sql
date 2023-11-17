@@ -64,15 +64,15 @@ AS BEGIN
 		USE [?];
 		SELECT  
 		''create view '' + QUOTENAME( REPLACE(''?'', ''SkyNode_'', '''')  + ''_'' + name) + 
-		'' AS SELECT * FROM '' +  QUOTENAME(''?'') + ''.dbo.'' + QUOTENAME(name) + '' '' AS cmd
+		'' AS SELECT * FROM '' +  QUOTENAME(''?'') + ''.'' + schema_name + ''.'' + QUOTENAME(name) + '' '' AS cmd
 		FROM (
-			SELECT name
-			FROM sys.tables  
+			SELECT name, SCHEMA_NAME(schema_id) as schema_name
+			FROM sys.tables
 			UNION ALL
-			SELECT name
+			SELECT name, SCHEMA_NAME(schema_id) as schema_name
 			FROM sys.views
 		) AS q 
-		WHERE ''?'' like ''skynode_%''
+		WHERE ''?'' like ''skynode_%'' AND ''?'' != ''SkyNode_g'' AND ''?'' NOT LIKE ''%_STAT'' AND ''?'' NOT LIKE ''SkyNode_Test%''
 		ORDER BY cmd
 	'
 	INSERT INTO #AllTables
@@ -81,14 +81,14 @@ AS BEGIN
 	-----------------------------------------------------------------------------------------------------
 	-- Create now the views one-by-one with a cursor
 
-	DECLARE cur2 Cursor For SELECT * FROM #AllTables
+	DECLARE cur2 Cursor For SELECT * FROM #AllTables ORDER BY cmd
 	OPEN cur2
 	FETCH NEXT FROM cur2 INTO @sql
 	WHILE @@FETCH_status = 0 
 	BEGIN 
 		BEGIN TRY
-			PRINT(@sql)
-			EXECUTE @sql
+			--PRINT(@sql)
+			EXECUTE(@sql)
 		END TRY  
 		BEGIN CATCH
 			PRINT 'Error: ' + @sql
@@ -105,6 +105,6 @@ GO
 --------------------------------------------------------------------------------------------------------------------------------------------
 -- Create all views to all skynode tables (and views)
 
---EXECUTE spDropAllViews
+EXECUTE spDropAllViews
 
 EXECUTE spCreateSkynodeViews
