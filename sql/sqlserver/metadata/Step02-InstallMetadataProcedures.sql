@@ -45,7 +45,7 @@ AS BEGIN
 	DECLARE @SQL NVARCHAR(max) = N'
 		USE [?]; DECLARE @database SYSNAME = DB_NAME();
 		INSERT INTO #tapcatalogs
-		SELECT 
+		SELECT DISTINCT 
 		@database,
 		REPLACE(@database, ''SkyNode_'', ''''), 
 		CASE WHEN [meta.summary] IS NULL THEN N'''' ELSE CAST([meta.summary] AS NVARCHAR(max)) END AS summary, 
@@ -116,7 +116,7 @@ AS BEGIN
 		IF EXISTS(SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES where TABLE_NAME = ''tables'' AND TABLE_SCHEMA=''TAP_SCHEMA'') -- try first using metadata in TAP_SCHEMA
 		BEGIN
 			INSERT INTO #taptables
-			SELECT 
+			SELECT DISTINCT 
 			t.TABLE_SCHEMA [schema_name],
 			REPLACE(@database, ''SkyNode_'', '''') + ''_'' + t.TABLE_NAME table_name,
 			''view'' [table_type], COALESCE(ts.description, N'''') description, ts.utype, NULL as [table_index]
@@ -126,7 +126,7 @@ AS BEGIN
 		ELSE IF EXISTS(SELECT name from sys.tables where name = ''dbobjects'') -- try using metadata in dbobjects table
 		BEGIN
 			INSERT INTO #taptables
-			SELECT 
+			SELECT DISTINCT 
 			ta.[schema_name], 
 			REPLACE(@database, ''SkyNode_'', '''') + ''_'' + ta.table_name as table_name,
 			''view'' [table_type],  COALESCE(do.description, N'''') description, NULL utype, NULL as [table_index]
@@ -142,7 +142,7 @@ AS BEGIN
 		ELSE
 		BEGIN
 			INSERT INTO #taptables
-			SELECT 
+			SELECT DISTINCT 
 			''dbo'' as ''schema_name'',
 			REPLACE(@database, ''SkyNode_'', '''') + ''_'' + table_name as ''table_name'', 
 			''view'' as table_type, 
@@ -217,21 +217,21 @@ AS BEGIN
 		IF EXISTS(SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES where TABLE_NAME = ''columns'' AND TABLE_SCHEMA=''TAP_SCHEMA'') -- try first using metadata in TAP_SCHEMA
 		BEGIN
 			INSERT INTO #tapcolumns
-			SELECT 
+			SELECT DISTINCT 
 			c.TABLE_SCHEMA schema_name, REPLACE(@database, ''SkyNode_'', '''') + ''_'' + c.TABLE_NAME as table_name, c.COLUMN_NAME,
 			COALESCE(tc.description, N'''') description, COALESCE(tc.unit, N'''') unit, COALESCE(tc.ucd, N'''') ucd, COALESCE(tc.utype, N'''') utype,
-			c.DATA_TYPE as datatype, c.CHARACTER_MAXIMUM_LENGTH as size, c.CHARACTER_MAXIMUM_LENGTH arraysize, c.NUMERIC_PRECISION precision, c.NUMERIC_SCALE scale, 1 principal,0 as indexed, 0 as std, ic.ordinal_position column_index
+			c.DATA_TYPE as datatype, c.CHARACTER_MAXIMUM_LENGTH as size, c.CHARACTER_MAXIMUM_LENGTH arraysize, c.NUMERIC_PRECISION precision, c.NUMERIC_SCALE scale, 1 principal,0 as indexed, 0 as std, c.ordinal_position column_index
 			FROM INFORMATION_SCHEMA.COLUMNS c
-			LEFT JOIN TAP_SCHEMA.columns AS tc ON c.COLUMN_NAME = tc.COLUMN_NAME and c.TABLE_NAME = tc.TABLE_NAME and c.TABLE_SCHEMA = tc.schema_name
+			LEFT JOIN TAP_SCHEMA.columns AS tc ON c.COLUMN_NAME = tc.COLUMN_NAME AND c.TABLE_NAME = tc.TABLE_NAME
 			ORDER BY table_name, column_index
 		END
 		ELSE IF EXISTS(SELECT name from sys.tables where name = ''DBColumns'') -- try using metadata in DBColumns table
 		BEGIN
 			INSERT INTO #tapcolumns
-			SELECT 
+			SELECT DISTINCT 
 			c.TABLE_SCHEMA schema_name, REPLACE(@database, ''SkyNode_'', '''') + ''_'' + c.TABLE_NAME as table_name, c.COLUMN_NAME,
 			COALESCE(dc.description, N'''') description, COALESCE(dc.unit, N'''') unit, COALESCE(dc.ucd, N'''') ucd, N'''' utype, 
-			c.DATA_TYPE as datatype, c.CHARACTER_MAXIMUM_LENGTH as size, c.CHARACTER_MAXIMUM_LENGTH arraysize, c.NUMERIC_PRECISION precision, c.NUMERIC_SCALE scale, 1 principal,0 as indexed, 0 as std, ic.ordinal_position column_index			
+			c.DATA_TYPE as datatype, c.CHARACTER_MAXIMUM_LENGTH as size, c.CHARACTER_MAXIMUM_LENGTH arraysize, c.NUMERIC_PRECISION precision, c.NUMERIC_SCALE scale, 1 principal,0 as indexed, 0 as std, c.ordinal_position column_index			
 			FROM INFORMATION_SCHEMA.COLUMNS c
 			LEFT JOIN DBColumns AS dc ON dc.name = c.COLUMN_NAME AND dc.tablename = c.TABLE_NAME
 			ORDER BY table_name, column_index
@@ -239,13 +239,13 @@ AS BEGIN
 		ELSE
 		BEGIN
 			INSERT INTO #tapcolumns
-			SELECT 
-			[schema_name], REPLACE(@database, ''SkyNode_'', '''') + ''_'' + table_name as table_name, column_name, 
+			SELECT DISTINCT 
+			schema_name, REPLACE(@database, ''SkyNode_'', '''') + ''_'' + table_name as table_name, column_name, 
 			COALESCE(CAST([meta.summary] AS NVARCHAR(max)), N'''') as description, COALESCE(CAST([meta.unit] AS NVARCHAR(max)), N'''') as unit, COALESCE(CAST([meta.quantity] AS NVARCHAR(max)), N'''') as ucd, N'''' as utype, 
 			datatype, size, arraysize, precision, scale, 1 as principal, 0 as indexed, 0 as std, column_index
 			FROM 
 			(
-				SELECT 
+				SELECT
 				table_name, c.name column_name, col.DATA_TYPE datatype, c.max_length size, c.max_length arraysize, c.precision, c.scale, col.ordinal_position column_index, col.TABLE_SCHEMA schema_name, ep.name property_name, ep.value property_value
 				FROM sys.columns c 
 				JOIN sys.all_objects o ON c.object_id = o.object_id
