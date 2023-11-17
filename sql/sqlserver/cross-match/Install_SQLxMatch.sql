@@ -38,12 +38,12 @@ CREATE FUNCTION fAlpha(@theta FLOAT, @decMin FLOAT, @decMax FLOAT, @zoneHeight F
 --/H Returns the value of alpha, which is a modified search radius along the RA direction.
 --/U ------------------------------------------------------------
 --/T Parameters:<br>
---/T <li> @theta float: value of theta (input search radius) in degrees.
---/T <li> @@decMin float: value of minimum declination in degrees.
---/T <li> @decMax float: value of maximum declination in degrees.
---/T <li> @zoneHeight float: value of the zone height in degrees.
---/T <li> returns alpha float: value of alpha.
-RETURNS float
+--/T <li> @theta FLOAT: value of theta (input search radius) in degrees.
+--/T <li> @@decMin FLOAT: value of minimum declination in degrees.
+--/T <li> @decMax FLOAT: value of maximum declination in degrees.
+--/T <li> @zoneHeight FLOAT: value of the zone height in degrees.
+--/T <li> returns alpha FLOAT: value of alpha.
+RETURNS FLOAT
 AS BEGIN 
 	DECLARE @dec FLOAT
 
@@ -77,7 +77,7 @@ CREATE PROCEDURE spPrintMessage @initial_datetime DATETIME, @message NVARCHAR(ma
 --/H Prints a text message together with the current time and the time elapsed since an initial time.
 --/U ------------------------------------------------------------
 --/T Parameters:<br>
---/T <li> @initial_datetime DATETIME: initial time from which to calculate the time elapsed.
+--/T <li> @initial_datetime DATETIME: initial time FROM which to calculate the time elapsed.
 --/T <li> @message NVARCHAR(max): text to be printed.
 AS BEGIN
 	DECLARE @current_datetime DATETIME = SYSDATETIME()
@@ -192,7 +192,7 @@ AS BEGIN
 
 	SET @temp_table_name = 'tempdb.' + QUOTENAME(@schema_name) + '.' + QUOTENAME(@table_name)
 
-	DECLARE @sql nvarchar(max) = N'
+	DECLARE @sql NVARCHAR(max) = N'
 	SELECT @numrows = count(*) FROM (
 		SELECT c.name as col_name
 		FROM ' + @server_name + N'.' + @db_name + N'.sys.tables t 
@@ -223,7 +223,7 @@ AS BEGIN
 	
 	--PRINT @sql
 	DECLARE @numrows BIGINT
-	EXECUTE sp_executesql @sql, N'@table_name SYSNAME, @schema_name SYSNAME, @temp_table_name SYSNAME, @column SYSNAME, @numrows bigint OUTPUT', 
+	EXECUTE sp_executesql @sql, N'@table_name SYSNAME, @schema_name SYSNAME, @temp_table_name SYSNAME, @column SYSNAME, @numrows BIGINT OUTPUT', 
 							      @table_name=@table_name, @schema_name=@schema_name, @temp_table_name=@temp_table_name, @column=@column, @numrows=@numrows OUTPUT
 
 	IF @numrows > 0
@@ -278,7 +278,7 @@ AS BEGIN
 
 	SET @temp_table_name = 'tempdb.' + QUOTENAME(@schema_name) + '.' + QUOTENAME(@table_name)
 
-	DECLARE @sql nvarchar(max) = N'
+	DECLARE @sql NVARCHAR(max) = N'
 	SELECT @col_type=col_type, @col_length=col_length, @col_precision=col_precision, @col_scale=col_scale FROM (
 		SELECT y.name as col_type, c.max_length as col_length, c.precision as col_precision, c.scale as col_scale
 		FROM ' + @server_name + N'.' + @db_name + N'.sys.tables t 
@@ -313,7 +313,7 @@ AS BEGIN
 	
 	--PRINT @sql
 	DECLARE @numrows BIGINT
-	EXECUTE sp_executesql @sql, N'@table_name SYSNAME, @schema_name SYSNAME, @temp_table_name SYSNAME, @column SYSNAME, @col_type nvarchar(max) OUTPUT, @col_length BIGINT OUTPUT, @col_precision BIGINT OUTPUT, @col_scale BIGINT OUTPUT', 
+	EXECUTE sp_executesql @sql, N'@table_name SYSNAME, @schema_name SYSNAME, @temp_table_name SYSNAME, @column SYSNAME, @col_type NVARCHAR(max) OUTPUT, @col_length BIGINT OUTPUT, @col_precision BIGINT OUTPUT, @col_scale BIGINT OUTPUT', 
 								@table_name=@table_name, @schema_name=@schema_name, @temp_table_name=@temp_table_name, @column=@column, @col_type=@col_type OUTPUT, @col_length=@col_length OUTPUT, @col_precision=@col_precision OUTPUT, @col_scale=@col_scale OUTPUT
 END
 GO
@@ -333,7 +333,7 @@ CREATE PROCEDURE spGetQuotedPath(@table SYSNAME, @quoted_path SYSNAME OUTPUT)
 --/U ------------------------------------------------------------
 --/T Parameters:<br>
 --/T <li> @table SYSNAME: input table. Can be any of these formats: 'server.database.schema.table', 'database.schema.table', 'database.table', or simply 'table'.
---/T <li> @quoted_path float: output path to the input table, with quotes.
+--/T <li> @quoted_path FLOAT: output path to the input table, with quotes.
 AS BEGIN
 	DECLARE @server_name SYSNAME,
 			@db_name SYSNAME,
@@ -444,7 +444,7 @@ IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'spBuildCatalo
 DROP PROCEDURE spBuildCatalog
 GO
 
-CREATE PROCEDURE spBuildCatalog(@target_table SYSNAME, @reference_table SYSNAME, @zoneHeight float = 30, @id_col SYSNAME = 'objid', @ra_col SYSNAME = 'ra', @dec_col SYSNAME = 'dec', @max_catalog_rows BIGINT = null)
+CREATE PROCEDURE spBuildCatalog(@target_table SYSNAME, @reference_table SYSNAME, @zoneHeight FLOAT = 30, @id_col SYSNAME = 'objid', @ra_col SYSNAME = 'ra', @dec_col SYSNAME = 'dec', @max_catalog_rows BIGINT = null)
 ----------------------------------------------------------------
 --/H Populates the @target_table table with a modified version of the inpute @reference_table table, in a format ready to be used by the SQLxMatch procedure.
 --/T The input @reference_table is expected to have at least a unique identifier column, as well as an RA (Right Ascension) and Dec (Declination) columns.
@@ -454,11 +454,11 @@ CREATE PROCEDURE spBuildCatalog(@target_table SYSNAME, @reference_table SYSNAME,
 --/T Parameters:<br>
 --/T <li> @target_table SYSNAME: target table to be populated. Can be any of these formats: 'server.database.schema.table', 'database.schema.table', or 'database.table', or simply 'table'.
 --/T <li> @reference_table SYSNAME: reference table. Can be any of these formats: 'server.database.schema.table', 'database.schema.table', 'database.table', or simply 'table'.
---/T <li> @zoneHeight float: If @table does not contain a column named 'zoneid', then it will calculate this column using zones of this height (in units of arcsec). Takes a default value of 30 arsec.
+--/T <li> @zoneHeight FLOAT: If @table does not contain a column named 'zoneid', then it will calculate this column using zones of this height (in units of arcsec). Takes a default value of 30 arsec.
 --/T <li> @id_col SYSNAME: name of column that uniquely identifies an object. Defaults to 'objid'.
 --/T <li> @ra_col SYSNAME: name of column containing the RA (Right Ascension) value of an object. Defaults to 'ra'.
 --/T <li> @dec_col SYSNAME: name of column containing the Dec (Declination) value of an object. Defaults to 'dec'.
---/T <li> @max_catalog_rows bigint: default value of null. If set, the procedure will return the TOP @max_catalog_rows rows, with no special ordering.
+--/T <li> @max_catalog_rows BIGINT: default value of null. If set, the procedure will return the TOP @max_catalog_rows rows, with no special ordering.
 AS BEGIN
 
 	SET NOCOUNT ON
@@ -512,15 +512,15 @@ AS BEGIN
 	SET @has_cxcycz = @has_columns & @has_column
 	EXECUTE spHasColumn @table=@reference_table, @column='zoneid', @has_column=@has_zoneid OUTPUT
 
-	DECLARE @select_top nvarchar(max) = N'INSERT INTO ' + @target_quoted_path + ' WITH (TABLOCKX) SELECT '
+	DECLARE @select_top NVARCHAR(max) = N'INSERT INTO ' + @target_quoted_path + ' WITH (TABLOCKX) SELECT '
 	IF @max_catalog_rows is not null
-		SET @select_top = @select_top + N' TOP ' + CAST(@max_catalog_rows as nvarchar) + N' '
+		SET @select_top = @select_top + N' TOP ' + CAST(@max_catalog_rows as NVARCHAR) + N' '
 
-	DECLARE @sql nvarchar(max) = N'DECLARE @d2r float = PI()/180.0; ' + @select_top 
+	DECLARE @sql NVARCHAR(max) = N'DECLARE @d2r FLOAT = PI()/180.0; ' + @select_top 
 	IF @has_zoneid = 1
 		SET @sql = @sql + N'zoneid, ' 
 	ELSE
-		SET @sql = @sql + 'CONVERT(INT,FLOOR((' + @dec_col + N' + 90.0)/' + CAST(@zoneHeight as nvarchar) + N')) as zoneid, '
+		SET @sql = @sql + 'CONVERT(INT,FLOOR((' + @dec_col + N' + 90.0)/' + CAST(@zoneHeight as NVARCHAR) + N')) as zoneid, '
 
 
 	SET @sql = @sql + @id_col + N' as objid, ' +  @ra_col + N' as ra, ' + @dec_col + N' as dec, '
@@ -536,7 +536,7 @@ AS BEGIN
 
 	--PRINT @sql
 
-	EXEC sp_executesql @sql, N'@zoneHeight float', @zoneHeight=@zoneHeight
+	EXEC sp_executesql @sql, N'@zoneHeight FLOAT', @zoneHeight=@zoneHeight
 
 END
 GO
@@ -561,12 +561,13 @@ CREATE PROCEDURE SQLxMatch
 	@ra_col2 SYSNAME = 'ra', 
 	@dec_col1 SYSNAME = 'dec', 
 	@dec_col2 SYSNAME = 'dec',
-	@max_catalog_rows1 BIGINT = null,
-	@max_catalog_rows2 BIGINT = null,
-	@output_table SYSNAME = null,
-	@only_nearest bit = 0,
+	@max_catalog_rows1 BIGINT = NULL,
+	@max_catalog_rows2 BIGINT = NULL,
+	@output_table SYSNAME = NULL,
+	@only_nearest BIT = 0,
 	@sort_by_separation BIT = 0,
-	@radec_in_output BIT = 0,
+	@include_sep_rank BIT = 0,
+	@include_radec BIT = 0,
 	@print_messages BIT = 0
 ----------------------------------------------------------------
 --/H Runs a spatial crossmatch between 2 catalogs of objects, using the Zones algorithm. Returns a table with the object IDs and angular separation between matching objects. 
@@ -577,22 +578,26 @@ CREATE PROCEDURE SQLxMatch
 --/T Parameters:<br>
 --/T <li> @table1 SYSNAME: name of first input catalog. Can be any of these formats: 'server.database.schema.table', 'database.schema.table', 'database.table', or simply 'table'
 --/T <li> @table2 SYSNAME: name of first input catalog. Can be any of these formats: 'server.database.schema.table', 'database.schema.table', 'database.table', or simply 'table'
---/T <li> @radius float: search radius around each object, in arcseconds. Takes a default value of 10 arcseconds.
+--/T <li> @radius FLOAT: search radius around each object, in arcseconds. Takes a default value of 10 arcseconds.
 --/T <li> @id_col1 SYSNAME: name of the column defining a unique object identifier in catalog @table1. Takes a default value of 'objid'.
 --/T <li> @id_col2 SYSNAME: name of the column defining a unique object identifier in catalog @table2. Takes a default value of 'objid'.
 --/T <li> @ra_col1 SYSNAME: name of the column containing the Right Ascention (RA) in degrees of objects in catalog @table1. Takes a default value of 'ra'.
 --/T <li> @ra_col2 SYSNAME: name of the column containing the Right Ascention (RA) in degrees of objects in catalog @table2. Takes a default value of 'ra'.
 --/T <li> @dec_col1 SYSNAME: name of the column containing the Declination (Dec) in degrees of objects in catalog @table1. Takes a default value of 'dec'.
 --/T <li> @dec_col2 SYSNAME: name of the column containing the Declination (Dec) in degrees of objects in catalog @table2. Takes a default value of 'dec'.
---/T <li> @max_catalog_rows1 bigint: default value of null. If set, the procedure will use only the TOP @max_catalog_rows1 rows in catalog @table1, with no special ordering.
---/T <li> @max_catalog_rows2 bigint: default value of null. If set, the procedure will use only the TOP @max_catalog_rows2 rows in catalog @table2, with no special ordering.
+--/T <li> @max_catalog_rows1 BIGINT: default value of null. If set, the procedure will use only the TOP @max_catalog_rows1 rows in catalog @table1, with no special ordering.
+--/T <li> @max_catalog_rows2 BIGINT: default value of null. If set, the procedure will use only the TOP @max_catalog_rows2 rows in catalog @table2, with no special ordering.
 --/T <li> @output_table SYSNAME: If NOT NULL, this procedure will insert the output results into the table @output_table (of format 'server.database.schema.table', 'database.schema.table', 'database.table', or simply 'table'), which must already exist and be visbile within the scope of the procedure. If set to null, the output results will be simply returned as a table resultset. Takes a default value of null.
---/T <li> @only_nearest bit: If set to 0 (default value), then all matches within a distance @radius to an object are returned. If set to 1, only the closest match to an object is returned.
---/T <li> @sort_by_separation bit: If set to 1, then the output will be sorted by the 'id1' and 'sep' columns. If set to 0 (default value), no particular ordering is applied.
---/T <li> @radec_in_output bit: If set to 1, then the output table will contain as well the (RA, Dec) values of each object.
---/T <li> @print_messages bit: If set to 1, then time-stamped messages will be printed as the different sections in this procedure are completed.
---/T <li> RETURNS TABLE(id1, id2, sep), where id1 and id2 are the unique object identifier columns in @table1 and @table2, respectively, and sep (float) is the angular separation between objetcs in arseconds.
---/T <li> In the case @radec_in_output=1, the procedure returns extra columns in the form of TABLE(id1, id2, sep, ra1, dec1, ra2, dec2), where ra1, dec1, ra2 and dec2 (float) are the coordinates of the objets in @table1 and @table2, respectively.
+--/T <li> @only_nearest BIT: If set to 0 (default value), then all matches within a distance @radius to an object are returned. If set to 1, only the closest match to an object is returned.
+--/T <li> @sort_by_separation BIT: If set to 1, then the output will be sorted by the 'id1' and 'sep' columns. If set to 0 (default value), no particular ordering is applied.
+--/T <li> @include_sep_rank BIT: If set to 1, then the output table will include an extra column named 'sep_rank', denoting the rank of all matches to an object when sorted by angular separation. If set to 0 (default value), this column is not included.
+--/T <li> @include_radec BIT: If set to 1, then the output table will contain the original (RA, Dec) columns from both input tables, as ra1, dec1, ra2, and dec2.
+--/T <li> @print_messages BIT: If set to 1, then time-stamped messages will be printed as the different sections in this procedure are completed.
+--/T <li> RETURNS TABLE(id1, id2, sep), where id1 and id2 are the unique object identifier columns in @table1 and @table2, respectively, and sep (FLOAT) is the angular separation between objetcs in arseconds.
+--/T <li> In the case @include_radec=1, the procedure returns TABLE(id1, id2, sep, ra1, dec1, ra2, dec2).
+--/T <li> In the case @include_sep_rank=1, the procedure returns TABLE(id1, id2, sep, sep_rank).
+--/T <li> In the case @include_sep_rank=1 and @include_radec=1, the procedure returns TABLE(id1, id2, sep, sep_rank, ra1, dec1, ra2, dec2).
+
 
 AS BEGIN
 
@@ -600,30 +605,28 @@ AS BEGIN
 	
 	IF @print_messages = 1
 	BEGIN
-		PRINT 'Laszlo'
 		DECLARE @initial_datetime datetime = SYSDATETIME()
 		EXECUTE spPrintMessage @initial_datetime , N'START xmatch procedure'
 	END
 
 	-- Enforce maximum allowed radius:
 	
-	DECLARE @max_radius float = 10 * 60.0 -- maximum allowed search radius in arcsec
-	DECLARE @theta float = @radius/3600.0 -- in degrees
+	DECLARE @max_radius FLOAT = 10 * 60.0 -- maximum allowed search radius in arcsec
+	DECLARE @theta FLOAT = @radius/3600.0 -- in degrees
 	
 	IF @theta > @max_radius/ 3600
 	BEGIN
-		DECLARE @max_radius_str nvarchar(128) = CAST(@max_radius as nvarchar(128)) -- RAISERROR won't allow float data types like @max_radius as arguments.
+		DECLARE @max_radius_str NVARCHAR(128) = CAST(@max_radius as NVARCHAR(128)) -- RAISERROR won't allow FLOAT data types like @max_radius as arguments.
 		RAISERROR(N'Input search radius @radius surpassed maxiumum limit of %s arcsec.', 16, 1, @max_radius_str)
 		RETURN
 	END
 
-
 	-- Define variables
 	-- If a zoneid column is provided in both input @table1 and @table2 tables, 
-	-- then we assume that they are calculated from a standard value of @DefaultZoneHeight.
+	-- then we assume that they are calculated FROM a standard value of @DefaultZoneHeight.
 
-	DECLARE @zoneHeight float = 10.0 / 3600.0 -- in degrees
-	DECLARE @DefaultZoneHeight float = 4.0 / 3600.0 -- 4 arcsec was chosen as a standard value for creating the zoneid columns in the public catalogs.
+	DECLARE @zoneHeight FLOAT = 10.0 / 3600.0 -- in degrees
+	DECLARE @DefaultZoneHeight FLOAT = 4.0 / 3600.0 -- 4 arcsec was chosen as a standard value for creating the zoneid columns in the public catalogs.
 
 	DECLARE @has_zones bit = 1
 	DECLARE @has_column bit
@@ -719,6 +722,7 @@ AS BEGIN
 	-- Setting up query that returns cross-match table . 
 
 	DECLARE @rank_column NVARCHAR(256) = N''
+	DECLARE @sep_rank_column NVARCHAR(256) = N''
 	DECLARE @order_clause NVARCHAR(256) = N''
 	DECLARE @radec_columns NVARCHAR(256) = N''
 	DECLARE @dec_columns NVARCHAR(256) = N''
@@ -727,27 +731,35 @@ AS BEGIN
 
 
 	-- Set output for radec input option.
-	IF @radec_in_output = 1
+	IF @include_radec= 1
 	BEGIN
 		SET @radec_columns = N', ra1, dec1, ra2, dec2 '
 		SET @dec_columns = N', t1.dec AS dec1, t2.dec AS dec2 '
 	END
+	
+	-- Set sep_rank column name 
+	IF @include_sep_rank = 1
+	BEGIN
+		SET @sep_rank_column = N', sep_rank'
+	END
 
-	-- Set output for only-nearest-object input option.
-	IF @only_nearest = 1
+	-- Set output for only-nearest-object and @include_sep_rank input options.
+	IF @only_nearest = 1 OR @include_sep_rank = 1
 	BEGIN
 		SET @rank_column = N', RANK() OVER (PARTITION BY id1 ORDER BY sep) AS sep_rank'
 	END
 
-	SET @sql = 'SELECT id1, id2' + @radec_columns + N', sep' + @rank_column + N' FROM wrap' -- wrap is the common table expression defined below.
+	SET @sql = 'SELECT id1, id2, sep' + @rank_column + @radec_columns + N' FROM wrap' -- wrap is the common table expression defined below.
 
-	IF @only_nearest = 1
+	IF @only_nearest = 1 OR @include_sep_rank = 1
 	BEGIN
-		SET @sql = N'SELECT * FROM ( ' + @sql + N' ) AS q WHERE sep_rank = 1'
+		SET @sql = N'SELECT id1, id2, sep' + @sep_rank_column + @radec_columns + N' FROM ( ' + @sql + N' ) AS q '
+		IF @only_nearest = 1
+			SET @sql = @sql + ' WHERE sep_rank = 1'
 	END
 
 	-- Set output for sort-by-separation input option.
-	IF @sort_by_separation = 1
+	IF @sort_by_separation = 1 AND @only_nearest = 0
 	BEGIN
 		SET @sql = @sql + N' ORDER BY id1, sep'
 	END
@@ -798,7 +810,7 @@ AS BEGIN
 	)
 	' + @sql
 
-	--print @sql
+	print @sql
 
 	EXECUTE sp_executesql @sql, N'@dist2 FLOAT', @dist2=@dist2
 

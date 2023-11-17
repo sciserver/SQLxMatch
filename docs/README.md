@@ -106,7 +106,8 @@ Taghizadeh-Popp, M. and Dobos, L. (2023) “SQLxMatch: In-Database Spatial Cross
     <li> <b>@output_table NVARCHAR(128) or SYSNAME</b>: If NOT NULL, this procedure will insert the output results into the table @output_table (of format 'server.database.schema.table', 'database.schema.table', 'database.table', or simply 'table'), which must already exist and be visible within the scope of the procedure. If set to null, the output results will be simply returned as a table resultset. Takes a default value of NULL.
     <li> <b>@only_nearest BIT</b>: If set to 0 (default value), then all matches within a distance @radius to an object are returned. If set to 1, only the closest match to an object is returned.
     <li> <b>@sort_by_separation BIT</b>: If set to 1, then the output will be sorted by the 'id1' and 'sep' columns. If set to 0 (default value), no particular ordering is applied.
-    <li> <b>@radec_in_output BIT </b>: If set to 1, then the output table will contain as well the (RA, Dec) values of each object.
+    <li> <b>@include_sep_rank BIT</b>: If set to 1, then the output table will include an extra column named 'sep_rank', denoting the rank of all matches to an object when sorted by angular separation. If set to 0 (default value), this column is not included.
+    <li> <b>@include_radec BIT </b>: If set to 1, then the output table will contain the original (RA, Dec) columns from both input tables, as ra1, dec1, ra2, and dec2.
     <li> <b>@print_messages BIT </b>: If set to 1, then time-stamped messages will be printed as the different sections in this procedure are completed.
     </ul>
 
@@ -115,7 +116,14 @@ Taghizadeh-Popp, M. and Dobos, L. (2023) “SQLxMatch: In-Database Spatial Cross
         <li><b>TABLE (id1, id2, sep)</b>, where id1 and id2 are the unique object identifier columns in @table1 and @table2, respectively, and sep (FLOAT) is the angular separation between objects in arseconds. 
             
     or
-    <li><b>TABLE (id1, id2, sep, ra1, dec1, ra2, dec2)</b> when @radec_in_output=1, where ra1, dec1, ra2 and dec2 (all FLOAT) are the coordinates of the objects in @table1 and @table2, respectively.
+    <li><b>TABLE (id1, id2, sep, ra1, dec1, ra2, dec2)</b> when @include_radec=1
+    
+    or
+    <li><b>TABLE (id1, id2, sep, sep_rank)</b> when @include_sep_rank=1
+    
+
+    or
+    <li><b>TABLE (id1, id2, sep, sep_rank, ra1, dec1, ra2, dec2)</b> when @include_radec=1 and @include_sep_rank = 1.
     </ul>    
 
 
