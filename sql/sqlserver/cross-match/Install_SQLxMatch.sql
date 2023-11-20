@@ -31,9 +31,8 @@ USE xmatchdb
 
 
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'fAlpha') AND type = 'FN')
-DROP FUNCTION fAlpha
+	DROP FUNCTION fAlpha
 GO
-
 CREATE FUNCTION fAlpha(@theta FLOAT, @decMin FLOAT, @decMax FLOAT, @zoneHeight FLOAT)
 --/H Returns the value of alpha, which is a modified search radius along the RA direction.
 --/U ------------------------------------------------------------
@@ -444,7 +443,7 @@ IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'spBuildCatalo
 DROP PROCEDURE spBuildCatalog
 GO
 
-CREATE PROCEDURE spBuildCatalog(@target_table SYSNAME, @reference_table SYSNAME, @zoneHeight FLOAT = 30, @id_col SYSNAME = 'objid', @ra_col SYSNAME = 'ra', @dec_col SYSNAME = 'dec', @max_catalog_rows BIGINT = null)
+CREATE PROCEDURE spBuildCatalog(@target_table SYSNAME, @reference_table SYSNAME, @zoneHeight FLOAT = 30, @force_zoneid_calculation BIT = 1, @id_col SYSNAME = 'objid', @ra_col SYSNAME = 'ra', @dec_col SYSNAME = 'dec', @max_catalog_rows BIGINT = null)
 ----------------------------------------------------------------
 --/H Populates the @target_table table with a modified version of the inpute @reference_table table, in a format ready to be used by the SQLxMatch procedure.
 --/T The input @reference_table is expected to have at least a unique identifier column, as well as an RA (Right Ascension) and Dec (Declination) columns.
@@ -454,7 +453,8 @@ CREATE PROCEDURE spBuildCatalog(@target_table SYSNAME, @reference_table SYSNAME,
 --/T Parameters:<br>
 --/T <li> @target_table SYSNAME: target table to be populated. Can be any of these formats: 'server.database.schema.table', 'database.schema.table', or 'database.table', or simply 'table'.
 --/T <li> @reference_table SYSNAME: reference table. Can be any of these formats: 'server.database.schema.table', 'database.schema.table', 'database.table', or simply 'table'.
---/T <li> @zoneHeight FLOAT: If @table does not contain a column named 'zoneid', then it will calculate this column using zones of this height (in units of arcsec). Takes a default value of 30 arsec.
+--/T <li> @zoneHeight FLOAT: If @table does not contain a column named 'zoneid', then the code can calculate this column using zones of this height (in units of arcsec). Takes a default value of 30 arsec.
+--/T <li> @force_zoneid_calculation BIT: If set to 1, the code will calculate the 'zoneid' column values (based on @zoneHeight), even if it that column is already present in @table.
 --/T <li> @id_col SYSNAME: name of column that uniquely identifies an object. Defaults to 'objid'.
 --/T <li> @ra_col SYSNAME: name of column containing the RA (Right Ascension) value of an object. Defaults to 'ra'.
 --/T <li> @dec_col SYSNAME: name of column containing the Dec (Declination) value of an object. Defaults to 'dec'.
@@ -501,16 +501,17 @@ AS BEGIN
 	END
 
 	DECLARE @has_columns BIT = 1
-	DECLARE @has_zoneid BIT = 1
 	DECLARE @has_cxcycz BIT = 1
-
 	EXECUTE spHasColumn @table=@reference_table, @column='cx', @has_column=@has_column OUTPUT
 	SET @has_columns = @has_column
 	EXECUTE spHasColumn @table=@reference_table, @column='cy', @has_column=@has_column OUTPUT
 	SET @has_columns = @has_columns & @has_column
 	EXECUTE spHasColumn @table=@reference_table, @column='cz', @has_column=@has_column OUTPUT
 	SET @has_cxcycz = @has_columns & @has_column
-	EXECUTE spHasColumn @table=@reference_table, @column='zoneid', @has_column=@has_zoneid OUTPUT
+
+	DECLARE @has_zoneid BIT = 0
+	IF @force_zoneid_calculation = 0
+		EXECUTE spHasColumn @table=@reference_table, @column='zoneid', @has_column=@has_zoneid OUTPUT
 
 	DECLARE @select_top NVARCHAR(max) = N'INSERT INTO ' + @target_quoted_path + ' WITH (TABLOCKX) SELECT '
 	IF @max_catalog_rows is not null
@@ -518,7 +519,7 @@ AS BEGIN
 
 	DECLARE @sql NVARCHAR(max) = N'DECLARE @d2r FLOAT = PI()/180.0; ' + @select_top 
 	IF @has_zoneid = 1
-		SET @sql = @sql + N'zoneid, ' 
+		SET @sql = @sql + N'zoneid, '
 	ELSE
 		SET @sql = @sql + 'CONVERT(INT,FLOOR((' + @dec_col + N' + 90.0)/' + CAST(@zoneHeight as NVARCHAR) + N')) as zoneid, '
 
@@ -611,10 +612,10 @@ AS BEGIN
 
 	-- Enforce maximum allowed radius:
 	
-	DECLARE @max_radius FLOAT = 10 * 60.0 -- maximum allowed search radius in arcsec
+	DECLARE @max_radius FLOAT = 30 * 60.0 -- maximum allowed search radius in arcsec
 	DECLARE @theta FLOAT = @radius/3600.0 -- in degrees
 	
-	IF @theta > @max_radius/ 3600
+	IF @radius > @max_radius
 	BEGIN
 		DECLARE @max_radius_str NVARCHAR(128) = CAST(@max_radius as NVARCHAR(128)) -- RAISERROR won't allow FLOAT data types like @max_radius as arguments.
 		RAISERROR(N'Input search radius @radius surpassed maxiumum limit of %s arcsec.', 16, 1, @max_radius_str)
@@ -622,21 +623,8 @@ AS BEGIN
 	END
 
 	-- Define variables
-	-- If a zoneid column is provided in both input @table1 and @table2 tables, 
-	-- then we assume that they are calculated FROM a standard value of @DefaultZoneHeight.
-
-	DECLARE @zoneHeight FLOAT = 10.0 / 3600.0 -- in degrees
-	DECLARE @DefaultZoneHeight FLOAT = 4.0 / 3600.0 -- 4 arcsec was chosen as a standard value for creating the zoneid columns in the public catalogs.
-
-	DECLARE @has_zones bit = 1
-	DECLARE @has_column bit
-	EXECUTE spHasColumn @table=@table1, @column='zoneid', @has_column=@has_zones OUTPUT
-	SET @has_zones = @has_zones & @has_column
-	EXECUTE spHasColumn @table=@table2, @column='zoneid', @has_column=@has_column OUTPUT
-	SET @has_zones = @has_zones & @has_column
-	IF @has_zones = 1
-		SET @zoneHeight = @DefaultZoneHeight
-
+	-- When @zoneHeight is not fixed by the catalogs, use @zoneHeight ~ @radius, see https://arxiv.org/ftp/cs/papers/0408/0408031.pdf
+	DECLARE @zoneHeight FLOAT = IIF(@radius > 4.0, 1.01*@radius, 4.0) / 3600.0 -- in degrees.
 	DECLARE @maxZone BIGINT = CAST(FLOOR(180.0/(@zoneHeight)) as BIGINT)
 	DECLARE @num_zones int = CONVERT(int, FLOOR(@theta/@zoneHeight) + 1)
 	DECLARE @sql NVARCHAR(MAX);
@@ -647,21 +635,6 @@ AS BEGIN
 
 	IF @print_messages = 1
 		EXECUTE spPrintMessage @initial_datetime , N'ended stting up parameters'
-
-
-	-- Create Zones definition table
-
-	CREATE TABLE #ZoneDef (
-		ZoneID INT PRIMARY KEY NOT NULL,
-		DecMin FLOAT NOT NULL,
-		DecMax FLOAT NOT NULL,
-	) 
-	INSERT INTO #ZoneDef WITH (TABLOCKX)
-	SELECT value as zoneid, value*@zoneheight-90 as decMin, value*@zoneheight-90 + @zoneheight as decMax 
-	FROM GENERATE_SERIES(CAST(0 as BIGINT), @maxZone, CAST(1 as BIGINT))
-	
-	IF @print_messages = 1
-		EXECUTE spPrintMessage @initial_datetime , N'ended filling up #ZoneDef'
 
 
 	-- Creating and populating both intermediary tables:
@@ -697,6 +670,21 @@ AS BEGIN
 
 	IF @print_messages = 1
 		EXECUTE spPrintMessage @initial_datetime , N'ended filling up #Table2'
+
+
+	-- Create Zones definition table
+
+	CREATE TABLE #ZoneDef (
+		ZoneID INT PRIMARY KEY NOT NULL,
+		DecMin FLOAT NOT NULL,
+		DecMax FLOAT NOT NULL,
+	) 
+	INSERT INTO #ZoneDef WITH (TABLOCKX)
+	SELECT value as zoneid, value*@zoneheight-90 as decMin, value*@zoneheight-90 + @zoneheight as decMax 
+	FROM GENERATE_SERIES(CAST(0 as BIGINT), @maxZone, CAST(1 as BIGINT))
+	
+	IF @print_messages = 1
+		EXECUTE spPrintMessage @initial_datetime , N'ended filling up #ZoneDef'
 
 
 	-- Create zones linkeage table
@@ -810,7 +798,7 @@ AS BEGIN
 	)
 	' + @sql
 
-	print @sql
+	--PRINT(@sql)
 
 	EXECUTE sp_executesql @sql, N'@dist2 FLOAT', @dist2=@dist2
 
@@ -819,3 +807,5 @@ AS BEGIN
 
 END
 GO
+
+
